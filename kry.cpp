@@ -1,12 +1,19 @@
-#include <stdio.h>
-#include <cstdlib>
-#include <unistd.h>
+/** 
+ * KRY 2023
+ * Project 1
+ * Implementation and frequency analysis of Affine cipher
+ * by Martin Jacko <xjacko05@stud.fit.vutbr.cz>
+ **/
+
+//#include <cstdio>
+//#include <cstdlib>
+//#include <unistd.h>
+//#include <cctype>
+//#include <utility>
 #include <cstring>
-#include <cctype>
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <utility>
 #include <vector>
 #include <algorithm>
 
@@ -32,26 +39,31 @@ string affineCipher(string input, int a, int b, int mode){
 
     string output = "";
 
+    int modInverse = 0;
+    if (mode == DECODE){
+        for (int i = 0; i < ALPHABET_LENGTH; i++){
+            if ((i * a) % ALPHABET_LENGTH == 1){
+                modInverse = i;
+                break;
+            }
+        }
+        if (!modInverse){
+            return output;
+        }
+    }
+
     for (int i = 0; i < (int) input.length(); i++){
 
         if (!isalpha(input[i])){
             output += input[i];
         }else{
-            //input[i] = toupper(input[i]);
-
             int plainCharValue = FROM_ASCII((int) input[i]);
             int encodedCharValue;
 
             if (mode == ENCODE){
                 encodedCharValue = (a * plainCharValue + b) % ALPHABET_LENGTH;
             }else if (mode == DECODE){
-                int aModInverse = 0;
-                for (int i = 0; i < ALPHABET_LENGTH; i++){
-                    if ((i * a) % ALPHABET_LENGTH == 1){
-                        aModInverse = i;
-                    }
-                }
-                encodedCharValue = aModInverse * (plainCharValue - b) % ALPHABET_LENGTH;
+                encodedCharValue = modInverse * (plainCharValue - b) % ALPHABET_LENGTH;
             }
             //cout << input[i] << "\t" << (int) input[i] << "\t" << plainCharValue << "\t" << encodedCharValue << "\t" << (char) TO_ASCII(encodedCharValue) << endl;
             output += (char) TO_ASCII(encodedCharValue);
@@ -62,15 +74,23 @@ string affineCipher(string input, int a, int b, int mode){
 }
 
 
-auto crack(vector<char> monoGrams){
+auto crack(vector<char> monoGrams, int size){
 
     vector<char> most = { 'E', 'A', 'O', 'I', 'N'};
     vector<char> least = { 'Q', 'X', 'W', 'G', 'F'};
 
-    int coefficient = 25;
-
-    //vector<pair<int,int>> keys;
+    int tolerance;
+    if (size > 2000){
+        tolerance = 8;
+    }else if (size > 500){
+        tolerance = 12 - size / 500;
+    }else{
+        tolerance = 21 - size / 50;
+    }
+    
     vector<tuple<int,int,int>> keys;
+
+    //int cahrEncode = 0;
 
     rerun:
 
@@ -79,8 +99,9 @@ auto crack(vector<char> monoGrams){
             int score = 0;
             for (int i = 0; i < (int) most.size(); i++){
                 char c = (a * FROM_ASCII(most[i]) + b) % ALPHABET_LENGTH;
-                auto pos = find(monoGrams.begin(), monoGrams.begin() + coefficient, TO_ASCII(c));
-                if (pos == monoGrams.begin() + coefficient){
+                auto pos = find(monoGrams.begin(), monoGrams.begin() + tolerance, TO_ASCII(c));
+                //cahrEncode++;
+                if (pos == monoGrams.begin() + tolerance){
                     goto next;
                 }else{
                     score += abs(i - distance(monoGrams.begin(), pos));
@@ -89,7 +110,8 @@ auto crack(vector<char> monoGrams){
             }
             for (int i = 0; i < (int) least.size(); i++){
                 char c = (a * FROM_ASCII(least[i]) + b) % ALPHABET_LENGTH;
-                auto pos = find(monoGrams.end() - coefficient, monoGrams.end(), TO_ASCII(c));
+                //cahrEncode++;
+                auto pos = find(monoGrams.end() - tolerance, monoGrams.end(), TO_ASCII(c));
                 if (pos == monoGrams.end()){
                     goto next;
                 }else{
@@ -97,8 +119,7 @@ auto crack(vector<char> monoGrams){
                     //cout << least[i] << "\t" << (char) TO_ASCII(c) << "\t" << abs(i - distance(pos, monoGrams.end() - 1)) << endl; 
                 }
             }
-            cout << a << "\t" << b << "\t" << score << endl;
-            //keys.push_back(pair<int,int>(a,b));
+            //cout << a << "\t" << b << "\t" << score << endl;
             keys.push_back(tuple<int,int,int>(a,b,score));
 
             next:
@@ -106,47 +127,24 @@ auto crack(vector<char> monoGrams){
         }
     }
 
-    if (keys.size() == 0 && coefficient <= ALPHABET_LENGTH / 2){
-        coefficient++;
-        cout << "COEFF CHANGE" << endl;
+    if (keys.size() == 0 && tolerance <= ALPHABET_LENGTH){
+        tolerance++;
+        //cout << "COEFF CHANGE" << endl;
         goto rerun;
-    }
-
-    //cout << distance(monoGrams.begin(), monoGrams.end()) << monoGrams[monoGrams.end()];
-
-    if (keys.size() > 1){
-        cout << "FOUND MORE THAN ONE KEY" << endl;
-        for (auto k : keys){
-            cout << get<0>(k) << "\t" << get<1>(k) << "\t" << get<2>(k) << endl;
-        }
+    }else if (keys.size() > 1){
+        //cout << "FOUND MORE THAN ONE KEY" << endl;
         
         int minscore = 0;
         for (int i = 1; i < (int) keys.size(); i++){
+            //cout << get<0>(keys[i]) << "\t" << get<1>(keys[i]) << "\t" << get<2>(keys[i]) << endl;
             if (get<2>(keys[i]) < get<2>(keys[minscore])){
                 minscore = i;
             }
         }
-
+        //cout << "NO. of cycles\t" << cahrEncode << endl;
         return pair<int,int>(get<0>(keys[minscore]), get<1>(keys[minscore]));
-        
-        /*vector<int> score;
-
-        for (auto k : keys){
-            int s = 0;
-            for (int i = 0; i < (int) most.size(); i++){
-                char c = (k.first * FROM_ASCII(most[i]) + k.second) % ALPHABET_LENGTH;
-                int index = distance(monoGrams.begin(), find(monoGrams.begin(), monoGrams.begin() + coefficient, TO_ASCII(c)));
-                s += abs(i - index);
-            }
-            for (int i = 0; i < (int) least.size(); i++){
-                char c = (k.first * FROM_ASCII(least[i]) + k.second) % ALPHABET_LENGTH;
-                int index = distance(monoGrams.end(), find(monoGrams.end() - coefficient, monoGrams.end(), TO_ASCII(c)));
-                s += abs(i - index);
-            }
-        }*/
     }
-
-    //return keys[0];
+    //cout << "NO. of cycles\t" << cahrEncode << endl;
     return pair<int,int>(get<0>(keys[0]), get<1>(keys[0]));
 }
 
@@ -204,11 +202,15 @@ int main(int argc, char *argv[]){
         fstream inFile;
         inFile.open(argv[3], ios::in);
 
-        pair<int,int> key = crack(getMonoGrams(inFile));
+        inFile.seekg(0, ios::end);
+        int fileSize = inFile.tellg();
+        inFile.clear();
+        inFile.seekg (0, ios::beg);
+
+        auto key = crack(getMonoGrams(inFile), fileSize);
 
         cout << "a=" << key.first << ",b=" << key.second << endl;
 
-        
         fstream outFile;
         outFile.open(argv[5], ios::out);
 
@@ -220,26 +222,10 @@ int main(int argc, char *argv[]){
             outFile << affineCipher((string) buffer, key.first, key.second, DECODE);
         }
 
-        delete buffer;
-
-        /*
-        for (auto const& [key, val] : o)
-        {
-            cout << key << ':' << val << endl;
-        }*/
-
+        delete[] buffer;
         inFile.close();
         outFile.close();
     }
-
-    /*
-    string msg = "TOTO JE TAJNA ZPRAVA";
-    int a = 15;
-    int b = 3575555;
-    string encoded = affineCipher(msg, a, b, ENCODE);
-    string decoded = affineCipher(encoded, a, b, DECODE);
-    cout << msg << "\t" << encoded << "\t" << decoded << "\t" << ((msg == decoded) ? "OK" : "ERROR") << endl;
-    */
 
     return 0;
 }
