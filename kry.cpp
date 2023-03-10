@@ -5,11 +5,6 @@
  * by Martin Jacko <xjacko05@stud.fit.vutbr.cz>
  **/
 
-//#include <cstdio>
-//#include <cstdlib>
-//#include <unistd.h>
-//#include <cctype>
-//#include <utility>
 #include <cstring>
 #include <iostream>
 #include <fstream>
@@ -69,7 +64,6 @@ string affineCipher(string input, int a, int b, int mode){
             }else if (mode == DECODE){
                 encodedCharValue = modInverse * (plainCharValue - b) % ALPHABET_LENGTH;
             }
-            //cout << input[i] << "\t" << (int) input[i] << "\t" << plainCharValue << "\t" << encodedCharValue << "\t" << (char) TO_ASCII(encodedCharValue) << endl;
             output += (char) TO_ASCII(encodedCharValue);
         }
     }
@@ -96,8 +90,6 @@ auto crack(vector<char> monoGrams, int size){
     
     vector<tuple<int,int,int>> keys;
 
-    //int cahrEncode = 0;
-
     rerun:
 
     //loops over keys
@@ -108,27 +100,22 @@ auto crack(vector<char> monoGrams, int size){
             for (int i = 0; i < (int) most.size(); i++){
                 char c = (a * FROM_ASCII(most[i]) + b) % ALPHABET_LENGTH;
                 auto pos = find(monoGrams.begin(), monoGrams.begin() + tolerance, TO_ASCII(c));
-                //cahrEncode++;
                 if (pos == monoGrams.begin() + tolerance){
                     goto next;
                 }else{
                     score += abs(i - distance(monoGrams.begin(), pos));
-                    //cout << most[i] << "\t" << (char) TO_ASCII(c) << "\t" << abs(i - distance(monoGrams.begin(), pos)) << endl; 
                 }
             }
             //testing 5 least occuring letters
             for (int i = 0; i < (int) least.size(); i++){
                 char c = (a * FROM_ASCII(least[i]) + b) % ALPHABET_LENGTH;
-                //cahrEncode++;
                 auto pos = find(monoGrams.end() - tolerance, monoGrams.end(), TO_ASCII(c));
                 if (pos == monoGrams.end()){
                     goto next;
                 }else{
                     score += abs(i - distance(pos, monoGrams.end() - 1));
-                    //cout << least[i] << "\t" << (char) TO_ASCII(c) << "\t" << abs(i - distance(pos, monoGrams.end() - 1)) << endl; 
                 }
             }
-            //cout << a << "\t" << b << "\t" << score << endl;
             keys.push_back(tuple<int,int,int>(a,b,score));
 
             next:
@@ -136,26 +123,21 @@ auto crack(vector<char> monoGrams, int size){
         }
     }
 
-    //reruns if no key wa found
+    //reruns if no key was found
     if (keys.size() == 0 && tolerance <= ALPHABET_LENGTH){
         tolerance++;
-        //cout << "COEFF CHANGE" << endl;
         goto rerun;
     //returns key with best(lowest score)
     }else if (keys.size() > 1){
-        //cout << "FOUND MORE THAN ONE KEY" << endl;
         
         int minscore = 0;
         for (int i = 1; i < (int) keys.size(); i++){
-            //cout << get<0>(keys[i]) << "\t" << get<1>(keys[i]) << "\t" << get<2>(keys[i]) << endl;
             if (get<2>(keys[i]) < get<2>(keys[minscore])){
                 minscore = i;
             }
         }
-        //cout << "NO. of cycles\t" << cahrEncode << endl;
         return pair<int,int>(get<0>(keys[minscore]), get<1>(keys[minscore]));
     }
-    //cout << "NO. of cycles\t" << cahrEncode << endl;
     return pair<int,int>(get<0>(keys[0]), get<1>(keys[0]));
 }
 
@@ -196,7 +178,6 @@ auto getMonoGrams(fstream &input){
 
     for (auto letter : data){
         monoGrams.push_back(letter.first);
-        //cout << letter.first << endl;
     }
 
     return monoGrams;
