@@ -96,7 +96,7 @@ auto crack(vector<char> monoGrams, int size){
     
     vector<tuple<int,int,int>> keys;
 
-    int cahrEncode = 0;
+    //int cahrEncode = 0;
 
     rerun:
 
@@ -108,7 +108,7 @@ auto crack(vector<char> monoGrams, int size){
             for (int i = 0; i < (int) most.size(); i++){
                 char c = (a * FROM_ASCII(most[i]) + b) % ALPHABET_LENGTH;
                 auto pos = find(monoGrams.begin(), monoGrams.begin() + tolerance, TO_ASCII(c));
-                cahrEncode++;
+                //cahrEncode++;
                 if (pos == monoGrams.begin() + tolerance){
                     goto next;
                 }else{
@@ -119,7 +119,7 @@ auto crack(vector<char> monoGrams, int size){
             //testing 5 least occuring letters
             for (int i = 0; i < (int) least.size(); i++){
                 char c = (a * FROM_ASCII(least[i]) + b) % ALPHABET_LENGTH;
-                cahrEncode++;
+                //cahrEncode++;
                 auto pos = find(monoGrams.end() - tolerance, monoGrams.end(), TO_ASCII(c));
                 if (pos == monoGrams.end()){
                     goto next;
@@ -152,10 +152,10 @@ auto crack(vector<char> monoGrams, int size){
                 minscore = i;
             }
         }
-        cout << "NO. of cycles\t" << cahrEncode << endl;
+        //cout << "NO. of cycles\t" << cahrEncode << endl;
         return pair<int,int>(get<0>(keys[minscore]), get<1>(keys[minscore]));
     }
-    cout << "NO. of cycles\t" << cahrEncode << endl;
+    //cout << "NO. of cycles\t" << cahrEncode << endl;
     return pair<int,int>(get<0>(keys[0]), get<1>(keys[0]));
 }
 
